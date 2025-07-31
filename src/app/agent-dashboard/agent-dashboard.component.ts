@@ -6,11 +6,12 @@ import { CalendarOptions, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { HttpClient } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-agent-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, FullCalendarModule],
+  imports: [CommonModule, FormsModule, FullCalendarModule, RouterModule],
   templateUrl: './agent-dashboard.component.html',
   styleUrls: ['./agent-dashboard.component.css']
 })
@@ -19,7 +20,6 @@ export class AgentDashboardComponent implements OnInit {
   isBrowser = false;
   calendarLoaded = false;
 
-  // Données du formulaire
   task = {
     title: '',
     description: '',
@@ -28,10 +28,8 @@ export class AgentDashboardComponent implements OnInit {
     priority: 'Moyenne'
   };
 
-  // Liste des tâches ajoutées
   tasks: any[] = [];
 
-  // Configuration FullCalendar
   calendarOptions: CalendarOptions = {
     plugins: [dayGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
@@ -46,21 +44,37 @@ export class AgentDashboardComponent implements OnInit {
     selectable: true,
     selectMirror: true,
     dayMaxEvents: true,
-    weekends: true
+    weekends: true,
+
+    eventDrop: this.handleEventDrop.bind(this),
+    eventResize: this.handleEventResize.bind(this),
+    select: this.handleDateSelect.bind(this),
+
+    eventContent: (arg) => {
+  const task = arg.event.extendedProps;
+  return {
+    html: `
+      <div style="font-size: 0.85em;">
+        <b>${arg.event.title}</b><br/>
+        <i>${task['description'] || ''}</i><br/>
+        <small>Durée: ${task['duration'] || 1} heure(s)</small><br/>
+        <small>Priorité: ${task['priority'] || 'Moyenne'}</small>
+      </div>
+    `
+  };
+}
   };
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private cdr: ChangeDetectorRef,
-    private http: HttpClient // Ajout de l'injection HttpClient
+    private http: HttpClient
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
 
   ngOnInit() {
-    // Initialisation côté client seulement
     if (this.isBrowser) {
-      // Appel API pour récupérer les tâches
       this.http.get<any[]>('http://localhost:8080/tasks').subscribe({
         next: (data) => {
           this.tasks = data;
@@ -70,29 +84,54 @@ export class AgentDashboardComponent implements OnInit {
           console.error('Erreur lors de la récupération des tâches', err);
         }
       });
-      // Attendre que le DOM soit prêt
       setTimeout(() => {
         this.calendarLoaded = true;
         this.cdr.detectChanges();
-        // Mettre à jour le calendrier si les tâches sont déjà chargées
         this.updateCalendarEvents();
       }, 100);
     }
   }
 
+  handleEventDrop(changeInfo: any) {
+    const event = changeInfo.event;
+    const id = Number(event.id);
+    const task = this.tasks.find(t => t.id === id);
+    if (task) {
+      task.startDate = event.startStr;
+      alert(`Tâche déplacée au ${task.startDate}`);
+      this.updateCalendarEvents();
+    }
+  }
+
+  handleEventResize(changeInfo: any) {
+    const event = changeInfo.event;
+    const id = Number(event.id);
+    const task = this.tasks.find(t => t.id === id);
+    if (task && event.end) {
+      const durationMs = event.end.getTime() - event.start.getTime();
+      task.duration = Math.ceil(durationMs / (1000 * 60 * 60));
+      alert(`Durée modifiée : ${task.duration} heures`);
+      this.updateCalendarEvents();
+    }
+  }
+
+  handleDateSelect(selectInfo: any) {
+    const start = selectInfo.startStr;
+    this.showForm = true;
+    this.task.startDate = start;
+    this.cdr.detectChanges();
+  }
+
   createTask() {
-    // Ajouter une copie de la tâche dans la liste
     const newTask = { ...this.task, id: Date.now() };
     this.tasks.push(newTask);
 
-    // Ajouter l'événement au calendrier seulement côté client
     if (this.isBrowser && this.calendarLoaded) {
-      this.addEventToCalendar(newTask);
+      this.updateCalendarEvents();
     }
 
     alert('Tâche créée avec succès !');
 
-    // Réinitialiser le formulaire
     this.task = {
       title: '',
       description: '',
@@ -112,27 +151,6 @@ export class AgentDashboardComponent implements OnInit {
       }
       alert('Tâche supprimée avec succès !');
     }
-  }
-
-  addEventToCalendar(task: any) {
-    if (!this.isBrowser || !this.calendarLoaded) return;
-
-    const event: EventInput = {
-      id: task.id.toString(),
-      title: task.title,
-      start: task.startDate,
-      backgroundColor: this.getPriorityColor(task.priority),
-      borderColor: this.getPriorityColor(task.priority),
-      extendedProps: {
-        description: task.description,
-        duration: task.duration,
-        priority: task.priority
-      }
-    };
-
-    // Mettre à jour les événements de manière sûre
-    const currentEvents = this.calendarOptions.events as EventInput[] || [];
-    this.calendarOptions.events = [...currentEvents, event];
   }
 
   updateCalendarEvents() {
@@ -156,10 +174,10 @@ export class AgentDashboardComponent implements OnInit {
 
   getPriorityColor(priority: string): string {
     switch (priority) {
-      case 'Haute': return '#ef4444'; // Rouge
-      case 'Moyenne': return '#f59e0b'; // Orange
-      case 'Basse': return '#10b981'; // Vert
-      default: return '#6b7280'; // Gris
+      case 'Haute': return '#ef4444';
+      case 'Moyenne': return '#f59e0b';
+      case 'Basse': return '#10b981';
+      default: return '#6b7280';
     }
   }
 }
