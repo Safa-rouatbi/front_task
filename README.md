@@ -18,6 +18,19 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 
 Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
+## Resetting the project
+
+Run `npm run reset` to perform a full cleanup and reinstall
+rm -rf node_modules package-lock.json dist
+Deletes installed dependencies, the lock file, and the build output.
+
+npm cache clean --force
+Forces a clean of the npm cache (useful if packages are corrupted).
+
+npm install
+Reinstalls all dependencies listed in package.json
+
+
 ## Running end-to-end tests
 
 Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.

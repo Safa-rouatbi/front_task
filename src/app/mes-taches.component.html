@@ -1,0 +1,31 @@
+<div class="p-6">
+  <h2 class="text-2xl font-bold mb-6">Mes Tâches</h2>
+  <div *ngIf="tasks.length === 0" class="text-gray-500 italic">Aucune tâche trouvée.</div>
+  <div class="grid gap-4">
+    <div *ngFor="let task of tasks" class="bg-white p-4 rounded shadow border-l-4"
+         [ngClass]="{
+           'border-red-500': task.priority === 'Haute',
+           'border-orange-500': task.priority === 'Moyenne',
+           'border-green-500': task.priority === 'Basse'
+         }">
+      <div class="flex justify-between items-start">
+        <div class="flex-1">
+          <h4 class="font-semibold text-lg">{{ task.title }}</h4>
+          <p class="text-gray-600 mt-1">{{ task.description }}</p>
+          <div class="flex gap-4 mt-2 text-sm text-gray-500">
+            <span>📅 {{ task.startDate }}</span>
+            <span>⏱️ {{ task.duration }}h</span>
+            <span class="font-medium"
+                  [ngClass]="{
+                    'text-red-600': task.priority === 'Haute',
+                    'text-orange-600': task.priority === 'Moyenne',
+                    'text-green-600': task.priority === 'Basse'
+                  }">
+              {{ task.priority }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
