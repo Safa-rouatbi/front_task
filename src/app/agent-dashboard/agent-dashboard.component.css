@@ -74,4 +74,27 @@
   color: white !important;
 }
 
+.btn-custom {
+  background-color: #759EBD;
+  color: white;
+  padding: 0.25rem 0.75rem; /* px-3 py-1 */
+  border-radius: 0.25rem; /* rounded */
+  transition: background-color 0.3s ease;
+}
+
+.btn-custom:hover {
+  background-color: #5a7a9e; /* couleur plus foncée au hover */
+}
+
+.btn-delete {
+  background-color: #7EB9ED;
+  color: white;
+  padding: 0.25rem 0.75rem; /* px-3 py-1 */
+  border-radius: 0.25rem; /* rounded */
+  transition: background-color 0.3s ease;
+}
+
+.btn-delete:hover {
+  background-color: #FF1E00;
+}
 

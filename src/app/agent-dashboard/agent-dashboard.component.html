@@ -1,43 +1,140 @@
 <div class="flex h-screen">
-  <!-- Sidebar -->
-  <aside class="w-64 text-white p-4 hidden md:block" style="background-color: #82D99B;">
-    <h2 class="text-xl font-semibold mb-6">Agent Panel</h2>
+  <aside
+    class="w-64 text-black p-4 hidden md:block"
+    style="background-color: white; box-shadow: 0 0 15px 5px rgba(178, 240, 158, 0.7);"
+  >
+    <h2 class="text-xl font-semibold mb-9">Agent Panel</h2>
     <nav class="flex flex-col gap-3">
-      <button type="button" [routerLink]="['/agent-dashboard']" class="hover:bg-white hover:bg-opacity-20 p-2 rounded transition-colors w-full text-left">📅 Vue Calendrier</button>
-      <button type="button" [routerLink]="['/mes-taches']" class="hover:bg-white hover:bg-opacity-20 p-2 rounded transition-colors w-full text-left">📋 Mes Tâches</button>
+      <button
+        type="button"
+        [routerLink]="['/agent-dashboard']"
+        class="hover:bg-white hover:bg-opacity-20 p-2 rounded transition-colors w-full text-left text-lg"
+      >
+        📅 Vue Calendrier
+      </button>
+      <button
+        type="button"
+        [routerLink]="['/mes-taches']"
+        class="hover:bg-white hover:bg-opacity-20 p-2 rounded transition-colors w-full text-left text-lg"
+      >
+        📋 Mes Tâches
+      </button>
     </nav>
   </aside>
 
   <!-- Main content -->
   <div class="flex-1 flex flex-col">
-    <!-- Header -->
-    <header class="bg-white shadow p-4 flex justify-between items-center">
+    <header
+      class="bg-white p-4 flex justify-between items-center shadow"
+      style="background-color: rgba(255, 255, 255, 0.3);"
+    >
       <h1 class="text-xl font-bold">Tableau de bord</h1>
+
+      <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto items-center">
+        <!-- Recherche + loupe -->
+        <div
+          class="flex items-center border border-gray-300 rounded overflow-hidden focus-within:ring-2 focus-within:ring-blue-400"
+        >
+          <input
+            type="search"
+            placeholder="Rechercher..."
+            [(ngModel)]="searchText"
+            class="px-3 py-2 flex-grow focus:outline-none"
+            (keyup.enter)="filterTasks()"
+          />
+          <button
+            type="button"
+            (click)="filterTasks()"
+            class="px-3 py-2  text-black transition-colors"
+            aria-label="Rechercher"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 21l-4.35-4.35M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Filtre par agent -->
+        <select
+          [(ngModel)]="filterAgent"
+          (change)="filterTasks()"
+          class="px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Agents</option>
+          <option *ngFor="let agent of agents" [value]="agent.id">
+            {{ agent.name }}
+          </option>
+        </select>
+
+        <!-- Filtre par priorité -->
+        <select
+          [(ngModel)]="filterPriority"
+          (change)="filterTasks()"
+          class="px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Priorités</option>
+          <option value="Haute">Haute</option>
+          <option value="Moyenne">Moyenne</option>
+          <option value="Basse">Basse</option>
+        </select>
+      </div>
+
       <button class="text-red-500 font-semibold hover:underline">Déconnexion</button>
     </header>
 
     <!-- Content -->
-    <main class="p-6 overflow-auto">
+    <main
+      class="p-6 overflow-auto"
+      style="
+        background: #34a7d1;
+        background: linear-gradient(
+          12deg,
+          rgba(52, 167, 209, 1) 37%,
+          rgba(56, 164, 207, 1) 32%,
+          rgba(56, 164, 207, 1) 39%,
+          rgba(74, 212, 161, 1) 51%,
+          rgba(82, 193, 145, 1) 65%,
+          rgba(87, 199, 133, 1) 85%,
+          rgba(94, 200, 131, 1) 100%,
+          rgba(237, 221, 83, 1) 100%
+        );
+      "
+    >
       <!-- Bouton Créer une tâche -->
       <div class="mb-4 flex justify-end">
         <button
-          (click)="showForm = !showForm"
+          (click)="toggleForm()"
           class="text-white px-4 py-2 rounded hover:opacity-90 transition-opacity"
-          style="background-color: #99B1E8;"
+          style="background-color: #99B1E8"
         >
           {{ showForm ? 'Annuler' : 'Créer une tâche' }}
         </button>
       </div>
 
-      <!-- Formulaire de création -->
-      <div *ngIf="showForm" class="bg-white p-6 rounded shadow-md max-w-xl mx-auto mb-6">
-        <form (ngSubmit)="createTask()" #taskForm="ngForm">
+      <!-- Formulaire de création / édition -->
+      <div
+        *ngIf="showForm"
+        class="bg-white p-6 rounded shadow-md max-w-xl mx-auto mb-6"
+      >
+        <form (ngSubmit)="submitTask()" #taskForm="ngForm">
           <div class="mb-4">
             <label class="block font-medium mb-1">Titre</label>
             <input
               [(ngModel)]="task.title"
               name="title"
               required
+              [readonly]="task.id !== null && !canEditTask(task)"
               class="w-full border rounded p-2"
             />
           </div>
@@ -48,6 +145,7 @@
               [(ngModel)]="task.description"
               name="description"
               rows="3"
+              [readonly]="task.id !== null && !canEditTask(task)"
               class="w-full border rounded p-2"
             ></textarea>
           </div>
@@ -59,6 +157,7 @@
                 [(ngModel)]="task.startDate"
                 name="startDate"
                 type="date"
+                [readonly]="task.id !== null && !canEditTask(task)"
                 class="w-full border rounded p-2"
               />
             </div>
@@ -70,6 +169,7 @@
                 name="duration"
                 type="number"
                 min="1"
+                [readonly]="task.id !== null && !canEditTask(task)"
                 class="w-full border rounded p-2"
               />
             </div>
@@ -80,6 +180,7 @@
             <select
               [(ngModel)]="task.priority"
               name="priority"
+              [disabled]="task.id !== null && !canEditTask(task)"
               class="w-full border rounded p-2"
             >
               <option value="Haute">Haute</option>
@@ -88,19 +189,68 @@
             </select>
           </div>
 
+          <div class="mb-4">
+            <label class="block font-medium mb-1">Assigner à</label>
+            <select
+              [(ngModel)]="task.assignedTo"
+              name="assignedTo"
+              [disabled]="task.id !== null && !canEditTask(task)"
+              class="w-full border rounded p-2"
+            >
+              <option [ngValue]="null">-- Sélectionner un agent --</option>
+              <option *ngFor="let agent of agents" [value]="agent.id">
+                {{ agent.name }}
+              </option>
+            </select>
+          </div>
+
           <button
+            *ngIf="!task.id || canEditTask(task)"
             type="submit"
             [disabled]="taskForm.invalid"
             class="text-white px-4 py-2 rounded hover:opacity-90 transition-opacity"
-            style="background-color: #99B1E8;"
+            style="background-color: #99B1E8"
           >
-            Valider
+            {{ task.id ? 'Modifier' : 'Valider' }}
+          </button>
+
+          <button
+            *ngIf="task.id && !canEditTask(task)"
+            type="button"
+            class="text-gray-500 px-4 py-2 rounded cursor-not-allowed"
+            disabled
+          >
+            Modification interdite
           </button>
         </form>
       </div>
 
-      <!-- Liste des tâches -->
-      <!-- (SUPPRIMÉ: affichage des cartes Mes Tâches ici) -->
+      <!-- Liste des tâches avec boutons Modifier / Supprimer -->
+      <div class="max-w-full mx-auto flex flex-wrap gap-4 mb-8">
+        <div
+          *ngFor="let taskItem of tasks"
+          class="bg-white p-4 rounded shadow-md border border-gray-200 w-80"
+        >
+          <h3 class="text-lg font-semibold mb-1">{{ taskItem.title }}</h3>
+          <p class="text-sm text-gray-600">{{ taskItem.description }}</p>
+          <p class="text-xs text-gray-500">Date de début : {{ taskItem.startDate }}</p>
+          <p class="text-xs text-gray-500">Durée : {{ taskItem.duration }} h</p>
+          <p class="text-xs text-gray-500">Priorité : {{ taskItem.priority }}</p>
+          <p class="text-xs text-gray-500">
+            Assignée à : {{ getAgentName(taskItem.assignedTo) }}
+          </p>
+
+          <!-- Boutons visibles seulement pour l’agent concerné -->
+          <div *ngIf="taskItem.assignedTo === currentAgent?.id" class="flex gap-2 mt-3">
+            <button (click)="editTask(taskItem)" class="btn-custom" type="button">
+              Modifier
+            </button>
+            <button (click)="deleteTask(taskItem.id)" class="btn-delete" type="button">
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Calendrier FullCalendar -->
       <div class="bg-white p-6 rounded shadow">
@@ -108,7 +258,10 @@
         <div *ngIf="isBrowser">
           <full-calendar [options]="calendarOptions"></full-calendar>
         </div>
-        <div *ngIf="!isBrowser" class="border border-dashed border-gray-400 p-8 text-center rounded-lg">
+        <div
+          *ngIf="!isBrowser"
+          class="border border-dashed border-gray-400 p-8 text-center rounded-lg"
+        >
           <p class="text-gray-500 italic">Chargement du calendrier...</p>
         </div>
       </div>
