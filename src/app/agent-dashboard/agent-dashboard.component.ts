@@ -6,7 +6,7 @@ import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { HttpClient } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router'; // ✅ Ajout ici
 
 @Component({
   selector: 'app-agent-dashboard',
@@ -24,7 +24,6 @@ export class AgentDashboardComponent implements OnInit {
   agents: any[] = [];
   selectedAgentId: number | null = null;
 
-  // ** Ajout des variables de filtre / recherche **
   searchText: string = '';
   filterAgent: number | '' = '';
   filterPriority: string = '';
@@ -60,7 +59,6 @@ export class AgentDashboardComponent implements OnInit {
     eventDrop: this.handleEventDrop.bind(this),
     eventResize: this.handleEventResize.bind(this),
     select: this.handleDateSelect.bind(this),
-
     eventContent: (arg) => {
       const task = arg.event.extendedProps;
       return {
@@ -80,7 +78,8 @@ export class AgentDashboardComponent implements OnInit {
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private cdr: ChangeDetectorRef,
-    private http: HttpClient
+    private http: HttpClient,
+    private router: Router // ✅ Ajout du Router
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
   }
@@ -89,6 +88,14 @@ export class AgentDashboardComponent implements OnInit {
     if (this.isBrowser) {
       this.loadCurrentAgent();
     }
+  }
+
+  logout() {
+    // ✅ Déconnexion front : suppression du token/localStorage et redirection
+    localStorage.clear();
+    sessionStorage.clear();
+    this.currentAgent = null;
+    this.router.navigate(['/login']); // adapte la route selon ton app
   }
 
   loadCurrentAgent() {
@@ -133,7 +140,7 @@ export class AgentDashboardComponent implements OnInit {
     this.http.get<any[]>('http://localhost:8080/tasks').subscribe({
       next: (data) => {
         this.tasks = data;
-        this.filteredTasks = [...this.tasks]; // copie initiale des tâches
+        this.filteredTasks = [...this.tasks];
         this.updateCalendarEvents();
       },
       error: (err) => {
@@ -142,12 +149,11 @@ export class AgentDashboardComponent implements OnInit {
     });
   }
 
-  // Nouvelle méthode de filtrage
   filterTasks() {
     this.filteredTasks = this.tasks.filter(task => {
       const matchesSearch = this.searchText
         ? (task.title.toLowerCase().includes(this.searchText.toLowerCase()) ||
-           task.description.toLowerCase().includes(this.searchText.toLowerCase()))
+          task.description.toLowerCase().includes(this.searchText.toLowerCase()))
         : true;
 
       const matchesAgent = this.filterAgent !== ''
@@ -222,7 +228,7 @@ export class AgentDashboardComponent implements OnInit {
 
     this.showForm = false;
     this.resetForm();
-    this.filterTasks();        // applique filtre après ajout/modif
+    this.filterTasks();
     this.updateCalendarEvents();
   }
 
@@ -241,7 +247,7 @@ export class AgentDashboardComponent implements OnInit {
     const index = this.tasks.findIndex(t => t.id === id);
     if (index !== -1 && this.canEditTask(this.tasks[index])) {
       this.tasks.splice(index, 1);
-      this.filterTasks();    // applique filtre après suppression
+      this.filterTasks();
       this.updateCalendarEvents();
       alert("Tâche supprimée");
     } else {
